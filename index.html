@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DATC: Direction-Aware Token Credit Assignment with Reward-Model Gradients. Paper, method, experimental results, and token-level analysis.">
+  <meta name="theme-color" content="#f3f5f8">
+  <link rel="canonical" href="https://zen-weiss1984.github.io/DATC/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://zen-weiss1984.github.io/DATC/">
+  <meta property="og:title" content="DATC — Direction-Aware Token Credit Assignment">
+  <meta property="og:description" content="Direction-Aware Token Credit Assignment with Reward-Model Gradients. Paper, method, results, and token-level analysis.">
+  <meta property="og:image" content="https://zen-weiss1984.github.io/DATC/assets/figures/main-workflow.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>DATC — Direction-Aware Token Credit Assignment</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#abstract">Skip to content</a>
+  <header class="paper-header" id="top">
+    <div class="header-inner">
+      <p class="project-name">DATC</p>
+      <h1>Direction-Aware Token Credit Assignment<br class="title-break"> with Reward-Model Gradients</h1>
+      <div class="authors" aria-label="Authors in manuscript order">
+        <span>Yikuan Hu<sup>1,*</sup></span>
+        <span>Jifeng Zhu<sup>2,*</sup></span>
+        <span>Minle Su<sup>1,*</sup></span>
+        <span>Jiaqin Yue<sup>3</sup></span>
+        <span>Gujie Shao<sup>2</sup></span>
+        <span>Yanzhe Chen<sup>2</sup></span>
+        <span>Haoxuan Jia<sup>4</sup></span>
+        <span>Haoran Xu<sup>3</sup></span>
+        <span>Wangzhou Dai<sup>1,†</sup></span>
+      </div>
+      <div class="affiliations">
+        <span><sup>1</sup> Nanjing University</span>
+        <span><sup>2</sup> National University of Singapore</span>
+        <span><sup>3</sup> Tsinghua University</span>
+        <span><sup>4</sup> Nanyang Technological University</span>
+      </div>
+      <p class="author-notes">* Equal contribution <span>† Corresponding author</span></p>
+      <div class="paper-links" aria-label="Paper resources">
+        <a href="assets/paper/datc.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></svg>Paper</a>
+        <span class="resource-pending" title="The training code has not been publicly released."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-12-2 14"/></svg>Code <small>coming soon</small></span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="section-nav" aria-label="Page sections">
+    <div class="nav-inner">
+      <a href="#abstract">Abstract</a><a href="#method">Method</a><a href="#results">Results</a><a href="#analysis">Token analysis</a><a href="#ablation">Ablations</a><a href="#training">Training</a><a href="#citation">BibTeX</a>
+    </div>
+  </nav>
+
+  <main class="content">
+    <section id="abstract" aria-labelledby="abstract-title">
+      <h2 id="abstract-title">Abstract</h2>
+      <p class="abstract-text">GRPO shares a response-level advantage across tokens, leaving unresolved how strongly each token should contribute to learning. Updates induced by the shared advantage reinforce or suppress the sampled token at each position, but these updates do not always point toward increasing reward at the token level. This motivates a work-based view of credit: just as work depends on the component of force along a displacement, token credit should reflect the local reward change along the policy update direction. We introduce <strong>Direction-Aware Token Credit Assignment (DATC)</strong>, which maps frozen reward-model gradients into policy logit space and allocates weights by evaluating the alignment between the reward direction and GRPO’s signed sampled-action update direction, while preserving the sign and mean of the response-level advantage. DATC outperforms GRPO in all four settings across two model families. Training code will be released separately.</p>
+    </section>
+
+    <section id="method" aria-labelledby="method-title">
+      <h2 id="method-title">Method</h2>
+      <p>DATC replaces the shared token advantage in GRPO with a direction-aware allocation. A frozen reward model provides a local reward direction; its alignment with each sampled-action update determines the token’s weight.</p>
+      <figure class="paper-figure workflow">
+        <a class="figure-link" href="assets/figures/main-workflow.png" data-figure aria-label="Enlarge DATC method figure"><img src="assets/figures/main-workflow.png" width="2400" height="1577" alt="DATC framework: a frozen reward model supplies input gradients, a straight-through bridge maps them to actor logits, and directional credit reweights token advantages." loading="lazy"></a>
+        <figcaption><strong>DATC framework.</strong> Reward gradients and sampled-action score directions are compared in policy logit space. The resulting weights redistribute the response-level advantage across tokens.</figcaption>
+      </figure>
+      <div class="method-equations">
+        <div class="equation-row">
+          <div><h3>Reward direction</h3><p>Map the frozen reward model’s input gradient into policy logit space and normalize by the group reward scale.</p></div>
+          <div class="equation"><!-- math:reward --><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>g</mi><mi>t</mi></msub><mo>=</mo><msup><mi>σ</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msub><mover accent="true"><mi mathvariant="normal">∇</mi><mo stretchy="true">^</mo></mover><msub><mi mathvariant="normal">ℓ</mi><mi>t</mi></msub></msub><mi>R</mi></mrow><annotation encoding="application/x-tex">g_t = \sigma^{-1}\widehat{\nabla}_{\ell_t}R</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.1734em;vertical-align:-0.2501em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1</span></span></span></span></span></span></span></span></span><span class="mord"><span class="mord katex-accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9233em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord">∇</span></span><span class="svg-align" style="top:-3.6833em;"><span class="pstrut" style="height:3em;"></span><span style="height:0.24em;"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="0.24em" viewBox="0 0 1062 239" preserveAspectRatio="none"><path d="M529 0h5l519 115c5 1 9 5 9 10 0 1-1 2-1 3l-4 22
+c-1 5-5 9-11 9h-2L532 67 19 159h-2c-5 0-9-4-11-9l-5-22c-1-6 2-12 8-13z"/></svg></span></span></span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2963em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2501em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span></span></span></span></span><!-- /math --></div>
+        </div>
+        <div class="equation-row">
+          <div><h3>Directional credit</h3><p>Take the inner product with the sampled-action score direction. The response advantage determines whether that action is reinforced or suppressed.</p></div>
+          <div class="equation"><!-- math:credit --><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>k</mi><mi>t</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msub><mi mathvariant="normal">∇</mi><msub><mi mathvariant="normal">ℓ</mi><mi>t</mi></msub></msub><mi>log</mi><mo>⁡</mo><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false">(</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">)</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>d</mi><mi>t</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">⟨</mo><msub><mi>g</mi><mi>t</mi></msub><mo separator="true">,</mo><mtext> </mtext><msub><mi>k</mi><mi>t</mi></msub><mo stretchy="false">⟩</mo></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}k_t &amp;= \nabla_{\ell_t}\log p_t(a_t)\\[0.35em]d_t &amp;= \langle g_t,\,k_t\rangle\end{aligned}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:3.05em;vertical-align:-1.275em;"></span><span class="mord"><span class="mtable"><span class="col-align-r"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.775em;"><span style="top:-3.935em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.085em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.275em;"><span></span></span></span></span></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.775em;"><span style="top:-3.935em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord">∇</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2963em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2501em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop">lo<span style="margin-right:0.0139em;">g</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span><span style="top:-2.085em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.275em;"><span></span></span></span></span></span></span></span></span></span></span></span><!-- /math --></div>
+        </div>
+        <div class="equation-row">
+          <div><h3>Token advantage</h3><p>A KL-regularized allocation produces positive weights with mean one, preserving the sign and mean of the response-level advantage.</p></div>
+          <div class="equation"><!-- math:allocation --><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>w</mi><mi>t</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mi>T</mi><mtext> </mtext><msub><mrow><mi mathvariant="normal">softmax</mi><mo>⁡</mo></mrow><mi>t</mi></msub><mtext> ⁣</mtext><mrow><mo fence="true">(</mo><mfrac><mrow><mi>A</mi><mi>d</mi></mrow><mi>τ</mi></mfrac><mo fence="true">)</mo></mrow></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mover accent="true"><mi>A</mi><mo stretchy="true">~</mo></mover><mi>t</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mi>A</mi><mtext> </mtext><msub><mi>w</mi><mi>t</mi></msub></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}w_t &amp;= T\,\operatorname{softmax}_t\!\left(\frac{Ad}{\tau}\right)\\[0.35em]\widetilde{A}_t &amp;= A\,w_t\end{aligned}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:4.0034em;vertical-align:-1.7517em;"></span><span class="mord"><span class="mtable"><span class="col-align-r"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.2517em;"><span style="top:-4.2517em;"><span class="pstrut" style="height:3.45em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.0269em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0269em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.0583em;"><span class="pstrut" style="height:3.45em;"></span><span class="mord"><span class="mord"><span class="mord katex-accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9433em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">A</span></span><span class="svg-align" style="width:calc(100% - 0.2778em);margin-left:0.2778em;top:-3.6833em;"><span class="pstrut" style="height:3em;"></span><span style="height:0.26em;"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="0.26em" viewBox="0 0 600 260" preserveAspectRatio="none"><path d="M200 55.538c-77 0-168 73.953-177 73.953-3 0-7
+-2.175-9-5.437L2 97c-1-2-2-4-2-6 0-4 2-7 5-9l20-12C116 12 171 0 207 0c86 0
+ 114 68 191 68 78 0 168-68 177-68 4 0 7 2 9 5l12 19c1 2.175 2 4.35 2 6.525 0
+ 4.35-2 7.613-5 9.788l-19 13.05c-92 63.077-116.937 75.308-183 76.128
+-68.267.847-113-73.952-191-73.952z"/></svg></span></span></span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.7517em;"><span></span></span></span></span></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.2517em;"><span style="top:-4.2517em;"><span class="pstrut" style="height:3.45em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1389em;">T</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop"><span class="mop"><span class="mord mathrm">softmax</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:-0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">A</span><span class="mord mathnormal">d</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span><span style="top:-2.0583em;"><span class="pstrut" style="height:3.45em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">A</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0269em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0269em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.7517em;"><span></span></span></span></span></span></span></span></span></span></span></span><!-- /math --></div>
+        </div>
+      </div>
+      <p class="note">Here, <i>A</i> is the response advantage, <i>T</i> is the response length, and <i>τ</i> controls allocation concentration. The practical allocator standardizes the credit scores and bounds weights between 1/λ and λ.</p>
+    </section>
+
+    <section id="results" aria-labelledby="results-title">
+      <h2 id="results-title">Main results</h2>
+      <p>We evaluate Base and Instruct initializations of Qwen3-14B and Llama-3.1-8B under matched rollout budgets. DATC improves over GRPO on all four reported metrics in each setting.</p>
+      <div class="result-controls" role="group" aria-label="Filter results by model family" hidden>
+        <button type="button" data-family="all" aria-pressed="true">All models</button>
+        <button type="button" data-family="qwen" aria-pressed="false">Qwen3-14B</button>
+        <button type="button" data-family="llama" aria-pressed="false">Llama-3.1-8B</button>
+      </div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Main results, scroll horizontally on small screens">
+        <table class="results-table">
+          <caption>Table 1. Main experimental results. All metrics: higher is better.</caption>
+          <thead><tr><th scope="col">Method</th><th scope="col">RM-Reward ↑</th><th scope="col">AlpacaEval ↑</th><th scope="col">Arena-Hard ↑</th><th scope="col">MT-Bench ↑</th></tr></thead>
+          <!-- results:start -->
+<tbody class="model-group" data-family="qwen"><tr class="model-heading"><th scope="rowgroup" colspan="5">Qwen3-14B · Base</th></tr>
+<tr><th scope="row">Initial</th><td>-2.54</td><td>6.65</td><td>8.42</td><td>6.76</td></tr>
+<tr><th scope="row">SFT</th><td>3.75</td><td>7.00</td><td>3.15</td><td>6.53</td></tr>
+<tr><th scope="row">GRPO</th><td>10.87</td><td>37.39</td><td>28.49</td><td>7.70</td></tr>
+<tr class="ours"><th scope="row">DATC</th><td>13.35<span class="std"> ± 0.16</span></td><td>49.57<span class="std"> ± 1.12</span></td><td>39.31<span class="std"> ± 1.79</span></td><td>7.99<span class="std"> ± 0.05</span></td></tr></tbody>
+<tbody class="model-group" data-family="qwen"><tr class="model-heading"><th scope="rowgroup" colspan="5">Qwen3-14B · Instruct</th></tr>
+<tr><th scope="row">Initial</th><td>11.43</td><td>63.35</td><td>66.75</td><td>7.96</td></tr>
+<tr><th scope="row">GRPO</th><td>13.75</td><td>72.80</td><td>73.60</td><td>8.36</td></tr>
+<tr class="ours"><th scope="row">DATC</th><td>14.43<span class="std"> ± 0.09</span></td><td>73.66<span class="std"> ± 1.59</span></td><td>74.86<span class="std"> ± 1.43</span></td><td>8.41<span class="std"> ± 0.09</span></td></tr></tbody>
+<tbody class="model-group" data-family="llama"><tr class="model-heading"><th scope="rowgroup" colspan="5">Llama-3.1-8B · Base</th></tr>
+<tr><th scope="row">Initial</th><td>-28.06</td><td>0.00</td><td>0.03</td><td>2.01</td></tr>
+<tr><th scope="row">SFT</th><td>-8.08</td><td>4.02</td><td>1.24</td><td>4.91</td></tr>
+<tr><th scope="row">GRPO</th><td>4.55</td><td>9.73</td><td>2.83</td><td>5.61</td></tr>
+<tr class="ours"><th scope="row">DATC</th><td>11.80<span class="std"> ± 0.39</span></td><td>12.58<span class="std"> ± 0.85</span></td><td>5.10<span class="std"> ± 0.48</span></td><td>5.78<span class="std"> ± 0.06</span></td></tr></tbody>
+<tbody class="model-group" data-family="llama"><tr class="model-heading"><th scope="rowgroup" colspan="5">Llama-3.1-8B · Instruct</th></tr>
+<tr><th scope="row">Initial</th><td>-0.26</td><td>11.47</td><td>3.02</td><td>6.81</td></tr>
+<tr><th scope="row">GRPO</th><td>19.61</td><td>21.61</td><td>8.41</td><td>7.13</td></tr>
+<tr class="ours"><th scope="row">DATC</th><td>24.73<span class="std"> ± 1.04</span></td><td>27.08<span class="std"> ± 1.25</span></td><td>9.35<span class="std"> ± 0.63</span></td><td>7.45<span class="std"> ± 0.05</span></td></tr></tbody>
+<!-- results:end -->
+        </table>
+      </div>
+      <p class="note">DATC reports mean ± standard deviation over three random seeds, with λ = 4. AlpacaEval uses raw win rate (%); Arena-Hard v2.0 uses win rate (%). RM scores should only be compared within the same reward model.</p>
+    </section>
+
+    <section id="analysis" aria-labelledby="analysis-title">
+      <h2 id="analysis-title">Token-level analysis</h2>
+      <p>For positive-advantage responses, DATC assigns more weight to tokens such as “accurately” and “accountable.” For negative-advantage responses, it concentrates suppression on unsupported or inappropriate expressions, including “Google” and “water” in the examples below.</p>
+      <figure class="paper-figure">
+        <a class="figure-link" href="assets/figures/token-credit-cases.png" data-figure aria-label="Enlarge token-weight heatmap"><img src="assets/figures/token-credit-cases.png" width="2400" height="915" alt="Four actual training excerpts with token weights: accurately and accountable receive more reinforcement; Google and water receive more suppression. Orange indicates reinforcement, blue indicates suppression." loading="lazy"></a>
+        <figcaption><strong>Token weights from training.</strong> Orange indicates reinforcement; blue indicates suppression. Darker colors indicate larger weights. Click the figure to inspect the original heatmap.</figcaption>
+      </figure>
+    </section>
+
+    <section id="ablation" aria-labelledby="ablation-title">
+      <h2 id="ablation-title">Credit assignment ablations</h2>
+      <p>Removing directional alignment retains gradient magnitudes but substantially reduces performance. Shuffling the weights also lowers performance, indicating that their correspondence with token positions matters.</p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Ablation results, scroll horizontally on small screens">
+        <table>
+          <caption>Table 2. Method comparisons and ablations on Qwen3-14B-Base.</caption>
+          <thead><tr><th scope="col">Method</th><th scope="col">RM-Reward ↑</th><th scope="col">AlpacaEval ↑</th><th scope="col">Arena-Hard ↑</th><th scope="col">MT-Bench ↑</th></tr></thead>
+          <tbody><!-- ablations:start -->
+<tr><th scope="row">Initial</th><td>-2.54</td><td>6.65</td><td>8.42</td><td>6.76</td></tr>
+<tr><th scope="row">SFT</th><td>3.75</td><td>7.00</td><td>3.15</td><td>6.53</td></tr>
+<tr><th scope="row">GRPO</th><td>10.87</td><td>37.39</td><td>28.49</td><td>7.70</td></tr>
+<tr><th scope="row">P2T</th><td>10.96</td><td>36.40</td><td>29.68</td><td>7.66</td></tr>
+<tr><th scope="row">RED</th><td>6.14</td><td>13.21</td><td>22.30</td><td>6.93</td></tr>
+<tr class="ours"><th scope="row">DATC (λ = 4)</th><td>13.35</td><td>49.57</td><td>39.31</td><td>7.99</td></tr>
+<tr><th scope="row">DATC (λ = 2)</th><td>12.89</td><td>41.49</td><td>34.49</td><td>7.77</td></tr>
+<tr><th scope="row">DATC (λ = 8)</th><td>12.91</td><td>45.96</td><td>37.63</td><td>7.98</td></tr>
+<tr><th scope="row">w/o direction alignment</th><td>-4.02</td><td>1.53</td><td>1.23</td><td>2.71</td></tr>
+<tr><th scope="row">w/ shuffled weights</th><td>10.73</td><td>32.62</td><td>26.99</td><td>7.51</td></tr>
+<!-- ablations:end --></tbody>
+        </table>
+      </div>
+      <p class="note">All rows use the same policy optimization settings. λ controls the bounds on token weights.</p>
+    </section>
+
+    <section id="training" aria-labelledby="training-title">
+      <h2 id="training-title">Training dynamics and cost</h2>
+      <p>On Llama-3.1-8B-Base, the final 25 rollouts have a mean raw reward of 14.14 for DATC and 7.72 for GRPO, with mean response lengths of 497.9 and 605.2 tokens, respectively.</p>
+      <figure class="paper-figure">
+        <a class="figure-link" href="assets/figures/training-dynamics-llama-base.png" data-figure aria-label="Enlarge training curves"><img src="assets/figures/training-dynamics-llama-base.png" width="2400" height="911" alt="Llama-3.1-8B-Base training curves comparing reward and response length for DATC and GRPO." loading="lazy"></a>
+        <figcaption><strong>Llama-3.1-8B-Base training.</strong> Light points show per-rollout means; solid curves show trailing 25-rollout moving averages.</figcaption>
+      </figure>
+      <p>DATC adds 5.7–9.1% end-to-end GPU time across the four settings, including sampling, scoring, credit computation, and policy updates.</p>
+      <details class="additional-figure">
+        <summary>GPU-time comparison across all four settings</summary>
+        <figure class="paper-figure">
+          <a class="figure-link" href="assets/figures/training-compute-cost.png" data-figure aria-label="Enlarge GPU-time comparison"><img src="assets/figures/training-compute-cost.png" width="2400" height="956" alt="End-to-end GPU time across the four model settings, showing 5.7 to 9.1 percent DATC overhead." loading="lazy"></a>
+          <figcaption>Total training GPU time under matched rollout budgets.</figcaption>
+        </figure>
+      </details>
+      <p class="note"><strong>Scope.</strong> DATC requires reward-model input gradients and aligned actor–RM vocabularies. Experiments study LoRA-based general preference alignment in two model families. The local gain result concerns a first-order surrogate with independent logits.</p>
+    </section>
+
+    <section id="citation" aria-labelledby="citation-title">
+      <div class="citation-heading"><h2 id="citation-title">BibTeX</h2><button type="button" id="copy-citation" hidden>Copy citation</button></div>
+      <pre><code id="citation-text">@misc{hu2026datc,
+  title  = {Direction-Aware Token Credit Assignment
+            with Reward-Model Gradients},
+  author = {Yikuan Hu and Jifeng Zhu and Minle Su and
+            Jiaqin Yue and Gujie Shao and Yanzhe Chen and
+            Haoxuan Jia and Haoran Xu and Wangzhou Dai},
+  year   = {2026},
+  note   = {Manuscript}
+}</code></pre>
+      <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>DATC · 2026</span><a href="https://github.com/ZEN-Weiss1984/DATC" target="_blank" rel="noopener">Website source</a><a href="#top">Back to top ↑</a></footer>
+  <dialog id="figure-dialog" aria-labelledby="dialog-caption">
+    <div class="dialog-toolbar"><a id="original-figure" href="assets/figures/main-workflow.png" target="_blank" rel="noopener">Open original figure ↗</a><button type="button" id="close-dialog" aria-label="Close figure">Close ×</button></div>
+    <img id="dialog-image" src="assets/figures/main-workflow.png" alt="">
+    <p id="dialog-caption"></p>
+  </dialog>
+</body>
+</html>

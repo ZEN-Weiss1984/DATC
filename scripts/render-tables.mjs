@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const context={window:{}};
+vm.runInNewContext(fs.readFileSync(path.join(root,'data.js'),'utf8'),context);
+const escape=text=>String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const row=item=>`<tr${item.ours||item.method==='DATC'?' class="ours"':''}><th scope="row">${escape(item.method)}</th>${item.values.map((v,i)=>`<td>${v.toFixed(2)}${item.std?`<span class="std"> ± ${item.std[i].toFixed(2)}</span>`:''}</td>`).join('')}</tr>`;
+const results=Object.entries(context.window.DATC_RESULTS).map(([key,setting])=>`<tbody class="model-group" data-family="${key.split('-')[0]}"><tr class="model-heading"><th scope="rowgroup" colspan="5">${escape(setting.name)}</th></tr>\n${setting.rows.map(row).join('\n')}</tbody>`).join('\n');
+let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+html=html.replace(/<!-- results:start -->[\s\S]*?<!-- results:end -->/,`<!-- results:start -->\n${results}\n<!-- results:end -->`);
+html=html.replace(/<!-- ablations:start -->[\s\S]*?<!-- ablations:end -->/,`<!-- ablations:start -->\n${context.window.DATC_ABLATIONS.map(row).join('\n')}\n<!-- ablations:end -->`);
+fs.writeFileSync(path.join(root,'index.html'),html);
+console.log('Pre-rendered 4 model settings and 10 ablation rows from data.js.');
