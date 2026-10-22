@@ -24,9 +24,7 @@ h1{font-size:34px;font-weight:700;letter-spacing:-.55px;margin:0 auto 28px}
 .author-notes{font-size:13px;color:var(--muted);margin:12px 0 24px}
 .author-notes span{margin-left:20px}
 .paper-links{display:flex;justify-content:center;gap:10px}
-.paper-links a,.resource-pending{display:inline-flex;align-items:center;gap:8px;padding:9px 22px;border-radius:25px;background:#252b32;color:#fff;text-decoration:none;font-size:16px;line-height:1.5}
-.resource-pending{background:#e6e9ed;color:#586371}
-.resource-pending small{font-size:11px}
+.paper-links a{display:inline-flex;align-items:center;gap:8px;padding:9px 22px;border-radius:25px;background:#252b32;color:#fff;text-decoration:none;font-size:16px;line-height:1.5}
 .paper-links a:hover{background:#3c4652}
 .paper-links svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .section-nav{position:sticky;top:0;background:#fff;z-index:10;border-bottom:1px solid var(--line)}

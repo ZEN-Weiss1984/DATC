@@ -4,7 +4,7 @@ Project page for **Direction-Aware Token Credit Assignment with Reward-Model Gra
 
 **[Project page](https://zen-weiss1984.github.io/DATC/)** · **[Paper](https://zen-weiss1984.github.io/DATC/assets/paper/datc.pdf)**
 
-This repository contains the project website. Training code will be released separately.
+This repository contains the project website. The code repository is [kilgrims/DATC](https://github.com/kilgrims/DATC).
 
 ## Website
 
