@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://zen-weiss1984.github.io/DATC/sitemap.xml
+Sitemap: https://datc-project.github.io/sitemap.xml

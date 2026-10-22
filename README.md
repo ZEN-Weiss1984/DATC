@@ -2,7 +2,7 @@
 
 Project page for **Direction-Aware Token Credit Assignment with Reward-Model Gradients**.
 
-**[Project page](https://zen-weiss1984.github.io/DATC/)** · **[Paper](https://zen-weiss1984.github.io/DATC/assets/paper/datc.pdf)**
+**[Project page](https://datc-project.github.io/)** · **[Paper](https://datc-project.github.io/assets/paper/datc.pdf)**
 
 This repository contains the project website. The code repository is [kilgrims/DATC](https://github.com/kilgrims/DATC).
 
@@ -22,7 +22,7 @@ Open the printed local URL. No package installation or build is required to read
 
 GitHub Pages is configured to use **GitHub Actions**. A push to `main` runs `.github/workflows/pages.yml`, checks the site, and deploys its public files to:
 
-https://zen-weiss1984.github.io/DATC/
+https://datc-project.github.io/
 
 The workflow publishes `index.html`, styles, browser JavaScript, figures, the paper, math fonts, and site metadata. Development scripts and this README are not included in the deployed site.
 
@@ -57,7 +57,7 @@ The formula source is in `scripts/render-math.mjs`. KaTeX 0.19.0 and its license
 
 ```latex
 The project page is available at
-\url{https://zen-weiss1984.github.io/DATC/}.
+\url{https://datc-project.github.io/}.
 ```
 
 See `paper-link.tex` for an alternative footnote.
